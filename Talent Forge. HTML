@@ -1,0 +1,47 @@
+// File: pages/index.tsx import { useState, useRef } from "react"; import { useReactToPrint } from "react-to-print";
+
+export default function Home() { const [form, setForm] = useState({ name: "", jobTitle: "", experience: "", skills: "", letterTone: "Professional" }); const [resume, setResume] = useState(""); const [coverLetter, setCoverLetter] = useState(""); const resumeRef = useRef(null); const coverRef = useRef(null);
+
+const handleChange = (e: any) => { setForm({ ...form, [e.target.name]: e.target.value }); };
+
+const generateContent = async () => { const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form), }); const data = await res.json(); setResume(data.resume); setCoverLetter(data.coverLetter); };
+
+const printResume = useReactToPrint({ content: () => resumeRef.current }); const printCoverLetter = useReactToPrint({ content: () => coverRef.current });
+
+return ( <main className="p-6 max-w-3xl mx-auto"> <h1 className="text-3xl font-bold mb-4">AI Resume & Cover Letter Generator</h1> <div className="grid grid-cols-1 gap-4 mb-6"> <input name="name" onChange={handleChange} placeholder="Your Name" className="border p-2" /> <input name="jobTitle" onChange={handleChange} placeholder="Job Title" className="border p-2" /> <textarea name="experience" onChange={handleChange} placeholder="Your Experience" className="border p-2" /> <input name="skills" onChange={handleChange} placeholder="Skills (comma separated)" className="border p-2" /> <select name="letterTone" onChange={handleChange} className="border p-2"> <option>Professional</option> <option>Friendly</option> <option>Formal</option> </select> </div> <button onClick={generateContent} className="bg-blue-600 text-white px-4 py-2 rounded">Generate</button>
+
+{resume && (
+    <div className="mt-8">
+      <h2 className="text-2xl font-semibold mb-2">Resume:</h2>
+      <div ref={resumeRef} className="bg-gray-100 p-4 rounded whitespace-pre-wrap">{resume}</div>
+      <button onClick={printResume} className="mt-2 bg-green-600 text-white px-4 py-2 rounded">Download Resume PDF</button>
+    </div>
+  )}
+
+  {coverLetter && (
+    <div className="mt-8">
+      <h2 className="text-2xl font-semibold mb-2">Cover Letter:</h2>
+      <div ref={coverRef} className="bg-gray-100 p-4 rounded whitespace-pre-wrap">{coverLetter}</div>
+      <button onClick={printCoverLetter} className="mt-2 bg-green-600 text-white px-4 py-2 rounded">Download Cover Letter PDF</button>
+    </div>
+  )}
+</main>
+
+); }
+
+// File: pages/api/generate.ts import { NextApiRequest, NextApiResponse } from "next"; import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) { const { name, jobTitle, experience, skills, letterTone } = req.body;
+
+const resumePrompt = Create a professional resume for:\nName: ${name}\nJob Title: ${jobTitle}\nExperience: ${experience}\nSkills: ${skills}; const coverPrompt = Write a ${letterTone.toLowerCase()} cover letter for:\nName: ${name}\nJob Title: ${jobTitle}\nExperience: ${experience}\nSkills: ${skills};
+
+const [resumeResp, coverResp] = await Promise.all([ openai.chat.completions.create({ messages: [{ role: "user", content: resumePrompt }], model: "gpt-4", temperature: 0.7, }), openai.chat.completions.create({ messages: [{ role: "user", content: coverPrompt }], model: "gpt-4", temperature: 0.7, }) ]);
+
+const resume = resumeResp.choices[0].message?.content || ""; const coverLetter = coverResp.choices[0].message?.content || "";
+
+res.status(200).json({ resume, coverLetter }); }
+
+// File: .env.local // OPENAI_API_KEY=your_openai_key_here
+
