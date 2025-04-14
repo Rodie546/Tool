@@ -1,0 +1,149 @@
+npx create-next-app@latest ai-resume-builder
+cd ai-resume-builder
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+import { useState } from "react";
+
+export default function Home() {
+  const [form, setForm] = useState({
+    name: "",
+    jobTitle: "",
+    experience: "",
+    skills: "",
+  });
+  const [result, setResult] = useState("");
+
+  const handleChange = (e: any) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const generateResume = async () => {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const data = await res.json();
+    setResult(data.result);
+  };
+
+  return (
+    <main className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">AI Resume Generator</h1>
+      <input name="name" onChange={handleChange} placeholder="Your Name" className="border p-2 w-full mb-2" />
+      <input name="jobTitle" onChange={handleChange} placeholder="Job Title" className="border p-2 w-full mb-2" />
+      <textarea name="experience" onChange={handleChange} placeholder="Your Experience" className="border p-2 w-full mb-2" />
+      <input name="skills" onChange={handleChange} placeholder="Skills" className="border p-2 w-full mb-2" />
+      <button onClick={generateResume} className="bg-blue-600 text-white px-4 py-2 rounded mt-2">Generate</button>
+
+      {result && (
+        <div className="mt-6 p-4 bg-gray-100 rounded">
+          <h2 className="text-xl font-semibold mb-2">Generated Resume:</h2>
+          <pre className="whitespace-pre-wrap">{result}</pre>
+        </div>
+      )}
+    </main>
+  );
+}
+import { NextApiRequest, NextApiResponse } from "next";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY, // Store this in .env.local
+});
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { name, jobTitle, experience, skills } = req.body;
+
+  const prompt = `
+  Create a professional resume for the following details:
+  Name: ${name}
+  Job Title: ${jobTitle}
+  Experience: ${experience}
+  Skills: ${skills}
+  `;
+
+  const completion = await openai.chat.completions.create({
+    messages: [{ role: "user", content: prompt }],
+    model: "gpt-4",
+    temperature: 0.7,
+  });
+
+  const result = completion.choices[0]?.message?.content;
+  res.status(200).json({ result });
+}
+OPENAI_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+npm install html2pdf.js
+import { useState, useRef } from "react";
+import html2pdf from "html2pdf.js";
+
+export default function Home() {
+  const [form, setForm] = useState({
+    name: "",
+    jobTitle: "",
+    experience: "",
+    skills: "",
+  });
+  const [result, setResult] = useState("");
+  const resultRef = useRef(null);
+
+  const handleChange = (e: any) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const generateResume = async () => {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+    const data = await res.json();
+    setResult(data.result);
+  };
+
+  const downloadPDF = () => {
+    if (resultRef.current) {
+      html2pdf()
+        .from(resultRef.current)
+        .set({ filename: `${form.name}_Resume.pdf` })
+        .save();
+    }
+  };
+
+  return (
+    <main className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">AI Resume Generator</h1>
+      <input name="name" onChange={handleChange} placeholder="Your Name" className="border p-2 w-full mb-2" />
+      <input name="jobTitle" onChange={handleChange} placeholder="Job Title" className="border p-2 w-full mb-2" />
+      <textarea name="experience" onChange={handleChange} placeholder="Your Experience" className="border p-2 w-full mb-2" />
+      <input name="skills" onChange={handleChange} placeholder="Skills" className="border p-2 w-full mb-2" />
+      <button onClick={generateResume} className="bg-blue-600 text-white px-4 py-2 rounded mt-2">Generate</button>
+
+      {result && (
+        <div className="mt-6">
+          <div ref={resultRef} className="p-4 bg-gray-100 rounded">
+            <h2 className="text-xl font-semibold mb-2">Generated Resume:</h2>
+            <pre className="whitespace-pre-wrap">{result}</pre>
+          </div>
+          <button onClick={downloadPDF} className="mt-4 bg-green-600 text-white px-4 py-2 rounded">
+            Download as PDF
+          </button>
+        </div>
+      )}
+    </main>
+  );
+}
