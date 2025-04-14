@@ -1,0 +1,121 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Compare image compression levels with dynamic optimization. SEO-friendly and AdSense ready image tool." />
+  <title>Image Compression Comparison Tool</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .comparison {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .comparison img {
+      width: 100%;
+      max-width: 48%;
+      height: auto;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .slider-container {
+      margin-top: 20px;
+    }
+    .adsense-placeholder {
+      width: 100%;
+      height: 90px;
+      background-color: #e0e0e0;
+      margin: 30px 0;
+      text-align: center;
+      line-height: 90px;
+      color: #888;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Image Compression Comparison Tool</h1>
+    <p>Select a compression level to compare original vs compressed image quality.</p><input type="file" id="uploadImage" accept="image/*" />
+
+<div class="slider-container">
+  <label for="compression">Compression Level: <span id="level">50</span>%</label>
+  <input type="range" id="compression" min="10" max="100" value="50" />
+</div>
+
+<div class="comparison">
+  <img id="originalImage" src="" alt="Original Image" />
+  <img id="compressedImage" src="" alt="Compressed Image" />
+</div>
+
+<div class="adsense-placeholder">
+  Ad Space (Insert AdSense Script Below)
+</div>
+
+<!-- Google AdSense Script Integration -->
+<!-- Replace ca-pub-XXXXXXXXXXXXXXX and data-ad-slot with your actual values -->
+<!--
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-XXXXXXXXXXXXXXX"
+     data-ad-slot="YOUR_AD_UNIT_ID"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+-->
+
+  </div>  <script>
+    const uploadImage = document.getElementById('uploadImage');
+    const compressionSlider = document.getElementById('compression');
+    const levelText = document.getElementById('level');
+    const originalImg = document.getElementById('originalImage');
+    const compressedImg = document.getElementById('compressedImage');
+
+    uploadImage.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          originalImg.src = evt.target.result;
+          compressImage(evt.target.result, compressionSlider.value);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    compressionSlider.addEventListener('input', () => {
+      levelText.textContent = compressionSlider.value;
+      if (originalImg.src) {
+        compressImage(originalImg.src, compressionSlider.value);
+      }
+    });
+
+    function compressImage(src, quality) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const compressedData = canvas.toDataURL('image/jpeg', quality / 100);
+        compressedImg.src = compressedData;
+      };
+      img.src = src;
+    }
+  </script></body>
+</html>
